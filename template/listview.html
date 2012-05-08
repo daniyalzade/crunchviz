@@ -1,0 +1,34 @@
+<html>
+  <head>
+      <title>Crunchviz</title>
+      <link href="http://twitter.github.com/bootstrap/assets/css/bootstrap.css" rel="stylesheet">
+      <style>
+.company {
+    display: inline-block;
+    height:75px;
+    width:200px;
+    border: 1px gray solid;
+}
+      </style>
+      <!--
+      <link href="static/main.css" rel="stylesheet">
+      -->
+  </head>
+  <body>
+  <body>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container" style="width: auto;">
+          <a class="brand" href="#">Crunchviz</a>
+        </div>
+      </div><!-- /navbar-inner -->
+    </div>
+    <div>
+        {% for company in companies %}
+        <div class="company">
+          <p>{{ company['_id'] }}</p>
+        </div>
+        {% end %}
+    </div>
+  </body>
+</html>

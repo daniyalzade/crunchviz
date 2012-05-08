@@ -1,0 +1,6 @@
+.company {
+    display: inline-block;
+    height:75px;
+    width:200px;
+    border: 1px gray solid;
+}

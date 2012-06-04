@@ -47,8 +47,8 @@ def fetch_companies(mongo_host, start_idx=1):
                 data['_id'] = result['permalink']
                 col.save(data)
 
-def get_companies_list(start_idx=None):
-    col = Connection()['crunch']['company']
+def get_companies_list(mongo_host, start_idx=None):
+    col = Connection(mongo_host)['crunch']['company']
     query = {}
     if start_idx:
         query['_id'] = {'$gte': start_idx}
@@ -59,7 +59,7 @@ def get_companies_list(start_idx=None):
 
 def fetch_extended(mongo_host, start_idx=None):
     ext_col = Connection(mongo_host)['crunch']['extended']
-    companies = [c['_id'] for c in get_companies_list(start_idx)]
+    companies = [c['_id'] for c in get_companies_list(mongo_host, start_idx)]
 
     BATCH = 10
 
@@ -78,7 +78,7 @@ def main():
     define("mongo_host", default='localhost')
 
     parse_command_line()
-    fetch_companies(options.mongo_host)
+    fetch_extended(options.mongo_host)
 
 if __name__ == '__main__':
     from utils.options import define, options, parse_command_line

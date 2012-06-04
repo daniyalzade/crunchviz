@@ -1,7 +1,7 @@
 import logging
 import pymongo
 from pymongo import Connection
-from requests import async
+import grequests
 from time import sleep
 import ujson
 
@@ -19,8 +19,8 @@ def _get_batch(urls, field=None):
     @return: list(dict)
     """
     try:
-        rs = [async.get(u) for u in urls]
-        responses = async.map(rs)
+        rs = [grequests.get(u) for u in urls]
+        responses = grequests.map(rs)
         if field:
             results_list = [ujson.decode(r.text)[field] for r in responses]
         else:
@@ -31,8 +31,8 @@ def _get_batch(urls, field=None):
         return _get_batch(urls, field)
     return results_list
 
-def fetch_companies(start_idx=1):
-    col = Connection()['crunch']['company']
+def fetch_companies(mongo_host, start_idx=1):
+    col = Connection(mongo_host)['crunch']['company']
 
     TOTAL = 8200
     BATCH = 10
@@ -57,8 +57,8 @@ def get_companies_list(start_idx=None):
         ])
     return companies
 
-def fetch_extended(start_idx=None):
-    ext_col = Connection()['crunch']['extended']
+def fetch_extended(mongo_host, start_idx=None):
+    ext_col = Connection(mongo_host)['crunch']['extended']
     companies = [c['_id'] for c in get_companies_list(start_idx)]
 
     BATCH = 10
@@ -73,6 +73,15 @@ def fetch_extended(start_idx=None):
             ext_col.save(data)
     print companies
 
+def main():
+    define("console", default=False, type=bool)
+    define("mongo_host", default='localhost')
 
-#fetch_companies(2591)
-fetch_extended('breakkup-com')
+    parse_command_line()
+    fetch_companies(options.mongo_host)
+
+if __name__ == '__main__':
+    from utils.options import define, options, parse_command_line
+    exit(main())
+
+#fetch_extended('breakkup-com')

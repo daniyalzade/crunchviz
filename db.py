@@ -125,6 +125,9 @@ class StatsDB(object):
     def save(self, company, stats):
         self._db.save({'_id':company, 'data': stats})
 
+    def find(self, *args, **kwargs):
+        return self._db.find(*args, **kwargs)
+
 def _create_stats(stats_db, company_db):
     companies = company_db.find({},{}, count=None)
     for company in iterate_with_progress(companies):

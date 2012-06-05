@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import os
 import tornado.httpserver
 import tornado.httpclient
 import tornado.web
@@ -12,6 +13,7 @@ import logging
 import sys
 
 from handler import CompanyHandler
+from handler import StatsHandler
 from loggingutils import basicConfig
 
 def main():
@@ -31,8 +33,16 @@ def main():
                      'mongo_host': options.mongo_host,
                     }
                 ),
+                (r'/stats.*?', StatsHandler,
+                    {
+                     'mongo_host': options.mongo_host,
+                    }
+                ),
                 ]
-    app_settings = { "debug" : options.debug }
+    app_settings = {
+            "debug" : options.debug,
+            "static_path": os.path.join(os.path.dirname(__file__), "static"),
+            }
     application = tornado.web.Application(handlers, **app_settings)
 
     http_server = tornado.httpserver.HTTPServer(application)

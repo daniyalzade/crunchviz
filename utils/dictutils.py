@@ -1,3 +1,6 @@
+import datetime
+import time
+
 def get_dotted(data, field, default=None, delimiter='.'):
     """Get a nested subfield inside data using Mongo style dotted notation
     notation. For example:
@@ -34,3 +37,35 @@ def set_dotted(data, field, value, delimiter='.'):
             data[next_field] = {}
 
         set_dotted(data[next_field], remaining_fields, value, delimiter=delimiter)
+
+def make_jsonable(data, human_readable=False):
+    """Make jsonable data. As of now, it'll convert:
+    * Dicts with values that aren't jsonable to jsonable
+      values, recursively.
+    * Datetime objects into seconds since epoch, unless 'human_readable' is
+        specified, in which case it's a nice string.
+
+    @param human_readable: If True, turn dates into readable strings.
+    @return dict
+    """
+    if type(data) == datetime.datetime:
+        if not human_readable:
+            data = time.mktime(data.timetuple())
+        else:
+            data = data.strftime('%Y-%m-%d %H:%M:%S')
+    elif isinstance(data, dict):
+        # Dont blindly make it a dict, since data could be of type SON
+        to_return = dict(data)
+        for key in data:
+            jsonable_key = make_jsonable(key, human_readable)
+            del to_return[key]
+            to_return[jsonable_key] = make_jsonable(data[key], human_readable)
+        data = to_return
+    elif isinstance(data, tuple):
+        data = tuple([make_jsonable(i, human_readable) for i in data])
+    elif isinstance(data, list):
+        data = list(data) # copy it first
+        for i, item in enumerate(data):
+            data[i] = make_jsonable(item, human_readable)
+    return data
+

@@ -1,9 +1,9 @@
+from collections import defaultdict
 from datetime import datetime
 from pymongo import Connection
 
 from utils.dictutils import get_dotted
-from utils.dictutils import set_dotted
-from utils.listutils import iterate_with_progress
+from utils.listutils import adv_enumerate
 
 class CompanyDB(object):
     def __init__(self, mongo_host):
@@ -67,7 +67,7 @@ def _get_money_raised(company):
     except ValueError:
         for multiplier, suffix in money_types:
             try:
-                money = multiplier * int(money.replace(suffix, ''))
+                money = multiplier * float(money.replace(suffix, ''))
                 return ('total_money_raised', money)
             except ValueError:
                 pass
@@ -94,7 +94,7 @@ def _get_datetime(year, month):
 
 def _get_founded_at(company):
     founded_year = company.get('founded_year')
-    founded_month = company.get('founded_moth')
+    founded_month = company.get('founded_month')
     founded_at = _get_datetime(founded_year, founded_month)
     return ('founded_at', founded_at)
 
@@ -125,12 +125,22 @@ class StatsDB(object):
     def save(self, company, stats):
         self._db.save({'_id':company, 'data': stats})
 
-    def find(self, *args, **kwargs):
-        return self._db.find(*args, **kwargs)
+    def find(self, query=None, *args, **kwargs):
+        end_ts = datetime(1995, 1, 1)
+        query = query or {}
+        query['data.founded_at'] = {'$gte': end_ts}
+        query['data.category_code'] = {'$ne': None}
+        query['data.number_of_employees'] = {'$gt': 0}
+        query['data.total_money_raised'] = {'$gt': 0}
+        print self._db.find(query, *args, **kwargs).count()
+        for i in self._db.find(query, *args, **kwargs):
+            if get_dotted(i, 'data.founded_at') >= end_ts:
+                yield i
+        raise StopIteration
 
 def _create_stats(stats_db, company_db):
     companies = company_db.find({},{}, count=None)
-    for company in iterate_with_progress(companies):
+    for company in adv_enumerate(companies, frequency=1000):
         stats = {}
         name = company.get('name')
         countries = []
@@ -152,13 +162,30 @@ def main():
     company_db = CompanyDB(options.mongo_host)
     stats_db = StatsDB(options.mongo_host)
     #companies = company_db.find({}, fields={'offices': 1}, count=None)
-    ##for company in iterate_with_progress(companies):
+    ##for company in adv_enumerate(companies):
     ##    for office in company['offices']:
     ##        country_db.increment(office['country_code'])
     ##print company_db
     _create_stats(stats_db, company_db)
 
-    print _parse_money('1.7m')
+    return -1
+    categories = defaultdict(int)
+    year_month = defaultdict(int)
+    year = defaultdict(int)
+    for stats in adv_enumerate(stats_db.find()):
+        categories[get_dotted(stats, 'data.category_code')] += 1
+        founded_at = get_dotted(stats, 'data.founded_at') 
+        if not founded_at:
+            continue
+        #if founded_at.year < 1995:
+        #    print stats
+        year_month[(founded_at.year, founded_at.month)] += 1
+        year[founded_at.year] += 1
+
+    print sum(categories.values())
+    print year
+    print sorted(year_month.items())
+    
 
 if __name__ == "__main__":
     from tornado.options import define

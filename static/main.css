@@ -1,6 +1,21 @@
-.company {
-    display: inline-block;
-    height:75px;
-    width:200px;
-    border: 1px gray solid;
+#tags {
+  clear: both;
+  padding-top: 10px;
+  margin-bottom: 10px;
 }
+a.tag {
+  color: #CDE;
+  margin-right: 10px;
+  margin-left: 10px;
+  display: inline-block;
+}
+
+.tag.selected {
+  color: #005580;
+}
+
+th.selected {
+  background: gray;
+}
+
+#demo-frame > div.demo { padding: 10px !important; }

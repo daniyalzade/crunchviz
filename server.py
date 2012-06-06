@@ -40,8 +40,9 @@ def main():
                 ),
                 ]
     app_settings = {
-            "debug" : options.debug,
-            "static_path": os.path.join(os.path.dirname(__file__), "static"),
+            'debug' : options.debug,
+            'static_path': os.path.join(os.path.dirname(__file__), "static"),
+            'gzip': True
             }
     application = tornado.web.Application(handlers, **app_settings)
 

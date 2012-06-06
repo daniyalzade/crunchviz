@@ -50,7 +50,10 @@ def make_jsonable(data, human_readable=False):
     """
     if type(data) == datetime.datetime:
         if not human_readable:
-            data = time.mktime(data.timetuple())
+            try:
+                data = time.mktime(data.timetuple())
+            except Exception:
+                data = None 
         else:
             data = data.strftime('%Y-%m-%d %H:%M:%S')
     elif isinstance(data, dict):

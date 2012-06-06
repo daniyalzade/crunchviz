@@ -7,7 +7,16 @@ from db import CompanyDB
 from db import StatsDB
 from utils.tornado import jsonp
 from utils.dictutils import make_jsonable
+from utils.dictutils import get_dotted
+from utils.dictutils import set_dotted
 
+DB_API_MAP = {
+    '_id': 'name',
+    'data.number_of_employees': 'numEmployees',
+    'data.category_code': 'category',
+    'data.founded_at': 'foundedAt',
+    'data.total_money_raised': 'funding',
+    }
 @jsonp
 class StatsHandler(tornado.web.RequestHandler):
     def initialize(self, mongo_host=None):
@@ -29,18 +38,24 @@ class StatsHandler(tornado.web.RequestHandler):
         return
 
     def get(self):
-        count = int(self.get_argument('count', 100))
+        count = int(self.get_argument('count', 1000))
         format = self.get_argument('format', 'html')
+        human = bool(self.get_argument('human', None))
         data = {}
         stats = []
-        stats_cursor = self._db.find({}, {})
+        stats_cursor = self._db.find({}, None)
         for idx, stat in enumerate(stats_cursor):
-            if idx > count:
+            if count and idx > count:
                 break
-            stats.append(stat)
-        data['stats'] = make_jsonable(stats)
+            item = {}
+            for k, v in DB_API_MAP.items():
+                set_dotted(item, v, get_dotted(stat, k))
+            stats.append(item)
         if format == 'html':
             return self._get_html(data)
+        self.set_header("Content-Type", "application/json; charset=UTF-8")
+        data['count'] = len(stats)
+        data['stats'] = make_jsonable(stats, human)
         data = ujson.encode(data)
         self.write(data)
 

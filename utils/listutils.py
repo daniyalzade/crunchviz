@@ -10,7 +10,13 @@ def _display_msg(msg, use_print=False):
         return
     logging.info(msg)
 
-def iterate_with_progress(list_, frequency=100, use_print=False):
+def adv_enumerate(list_,
+        start=0,
+        end=None,
+        frequency=100,
+        use_print=False,
+        get_tuple=False,
+        ):
     """
     @param list_: list
     @param frequency: int
@@ -22,7 +28,9 @@ def iterate_with_progress(list_, frequency=100, use_print=False):
         len_ = len(list_)
     except TypeError:
         pass
-    for i, item in enumerate(list_):
+    for i, item in enumerate(list_, start=start):
         if not i % frequency:
             _display_msg("completed %s/%s" % (i, len_))
-        yield item
+        if end and i >= end:
+            raise StopIteration
+        yield (i, item) if get_tuple else item

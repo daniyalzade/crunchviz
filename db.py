@@ -132,11 +132,50 @@ class StatsDB(object):
         query['data.category_code'] = {'$ne': None}
         query['data.number_of_employees'] = {'$gt': 0}
         query['data.total_money_raised'] = {'$gt': 0}
-        print self._db.find(query, *args, **kwargs).count()
         for i in self._db.find(query, *args, **kwargs):
             if get_dotted(i, 'data.founded_at') >= end_ts:
                 yield i
         raise StopIteration
+
+COUNTRIES = [
+"USA",
+"GBR",
+"CAN",
+"IND",
+"DEU",
+"FRA",
+"AUS",
+"ISR",
+"ESP",
+"CHN",
+]
+        
+def _create_csv(stats_db, company_db):
+    stats_cursor = stats_db.find({}, None)
+    print 'name,num_countries,funding,funding_capped,days_to_funding,num_rounds,employees,year,category,country'
+    for stats in adv_enumerate(stats_cursor, frequency=1000):
+        name = stats.get('_id').replace(' ', '_')
+        stats = stats['data']
+        countries = stats.get('countries')
+        country = countries[0] if len(countries) else None
+        country = country if country in COUNTRIES else 'other'
+        num_rounds = len(stats.get('funding_rounds'))
+        founded_at = stats.get('founded_at')
+        days_to_funding = 0
+        funding_rounds = stats.get('funding_rounds')
+        if funding_rounds and funding_rounds[0]['funded_at'] and founded_at.year > 1995:
+            days_to_funding = (funding_rounds[0]['funded_at'] - founded_at).days
+
+        funding_capped = min(float(stats.get('total_money_raised')) / 10**6, 100)
+        funding = float(stats.get('total_money_raised')) / 10**6
+        employees = stats.get('number_of_employees')
+        year = founded_at.year
+        category = stats.get('category_code')
+        try:
+            print ','.join(map(lambda k: str(k), [name, len(countries), funding, funding_capped, days_to_funding, num_rounds, employees, year, category, country]))
+        except Exception, e:
+            pass
+
 
 def _create_stats(stats_db, company_db):
     companies = company_db.find({},{}, count=None)
@@ -166,8 +205,8 @@ def main():
     ##    for office in company['offices']:
     ##        country_db.increment(office['country_code'])
     ##print company_db
-    _create_stats(stats_db, company_db)
-
+    #_create_stats(stats_db, company_db)
+    _create_csv(stats_db, company_db)
     return -1
     categories = defaultdict(int)
     year_month = defaultdict(int)

@@ -70,6 +70,9 @@ Crunchviz.prototype.onDataLoad = function(data) {
     var company = new Company(data['stats'][i]);
     this._companies.push(company);
   }
+  var categoryAggs = {};
+  $.each(this._companies) {
+  }
   this.addTags();
 }
 
